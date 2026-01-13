@@ -1,11 +1,11 @@
-﻿# Deribit Price Tracker
+# Deribit Price Tracker
 
 Система для отслеживания цен криптовалют с биржи Deribit и предоставления API для доступа к историческим данным.
 
 ## Описание
 
 Приложение состоит из двух основных компонентов:
-1. **Celery Worker** - периодически получает индексные цены BTC_USD и ETH_USD с биржи Deribit и сохраняет их в PostgreSQL
+1. **Celery Worker** - периодически получает индексные цены BTC_USD и ETH_USD с биржи Deribit каждую минуту и сохраняет их в PostgreSQL
 2. **FastAPI Application** - предоставляет REST API для получения сохраненных данных о ценах
 
 ## Технологический стек
@@ -23,22 +23,35 @@
 - Docker и Docker Compose
 - Python 3.11+ (для локальной разработки)
 
-## Развертывание
+## Быстрое развертывание
 
-### Использование Docker Compose (рекомендуется)
+### 1. Клонирование репозитория
 
-1. Клонируйте репозиторий:
 ```bash
 git clone <repository-url>
 cd deribit-price-tracker
 ```
 
-2. Создайте файл `.env` в корне проекта (можно скопировать из `.env.example`):
+### 2. Создание файла .env
+
+Скопируйте `.env.example` в `.env`:
+
+**Windows PowerShell:**
+```powershell
+Copy-Item .env.example .env
+```
+
+**Linux/Mac:**
+```bash
+cp .env.example .env
+```
+
+Или создайте файл `.env` вручную:
 ```env
 POSTGRES_USER=deribit_user
 POSTGRES_PASSWORD=deribit_password
 POSTGRES_DB=deribit_db
-POSTGRES_HOST=db
+POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 REDIS_HOST=redis
 REDIS_PORT=6379
@@ -46,51 +59,49 @@ CELERY_BROKER_URL=redis://redis:6379/0
 CELERY_RESULT_BACKEND=redis://redis:6379/0
 ```
 
-3. Запустите приложение:
+### 3. Запуск приложения
+
 ```bash
 docker-compose up -d
 ```
 
-4. Приложение будет доступно по адресу: `http://localhost:8000`
-5. Документация API: `http://localhost:8000/docs`
+### 4. Проверка статуса
 
-### Локальное развертывание
-
-1. Установите зависимости:
 ```bash
-pip install -r requirements.txt
+docker-compose ps
 ```
 
-2. Настройте PostgreSQL и Redis (должны быть запущены локально)
+Все контейнеры должны быть в статусе "Up".
 
-3. Создайте файл `.env` с настройками подключения к БД и Redis
+### 5. Доступ к приложению
 
-4. Примените миграции:
-```bash
-alembic upgrade head
-```
-
-5. Запустите Celery worker:
-```bash
-celery -A app.celery_app worker --loglevel=info
-```
-
-6. Запустите Celery beat (для периодических задач):
-```bash
-celery -A app.celery_app beat --loglevel=info
-```
-
-7. Запустите FastAPI приложение:
-```bash
-uvicorn app.main:app --reload
-```
+- **API**: http://localhost:8000
+- **Документация Swagger**: http://localhost:8000/docs
+- **Альтернативная документация**: http://localhost:8000/redoc
 
 ## Использование API
+
+Все методы требуют обязательный query-параметр `ticker` (BTC_USD или ETH_USD).
 
 ### 1. Получение всех сохраненных данных по валюте
 
 ```bash
 GET /api/prices?ticker=BTC_USD
+```
+
+**Пример ответа:**
+```json
+{
+  "prices": [
+    {
+      "id": 1,
+      "ticker": "BTC_USD",
+      "price": "92084.62000000",
+      "timestamp": 1768312459
+    }
+  ],
+  "total": 1
+}
 ```
 
 ### 2. Получение последней цены валюты
@@ -99,13 +110,25 @@ GET /api/prices?ticker=BTC_USD
 GET /api/prices/last?ticker=ETH_USD
 ```
 
+**Пример ответа:**
+```json
+{
+  "ticker": "ETH_USD",
+  "price": "3143.85000000",
+  "timestamp": 1768312459
+}
+```
+
 ### 3. Получение цены с фильтром по дате
 
 ```bash
 GET /api/prices/filter?ticker=BTC_USD&start_date=2024-01-01&end_date=2024-01-31
 ```
 
-Все методы требуют обязательный query-параметр `ticker` (BTC_USD или ETH_USD).
+**Параметры:**
+- `ticker` (обязательный) - BTC_USD или ETH_USD
+- `start_date` (опциональный) - начальная дата в формате YYYY-MM-DD
+- `end_date` (опциональный) - конечная дата в формате YYYY-MM-DD
 
 ## Структура проекта
 
@@ -116,31 +139,83 @@ deribit-price-tracker/
 │   ├── main.py                 # FastAPI приложение
 │   ├── config.py               # Конфигурация
 │   ├── database.py             # Подключение к БД
-│   ├── models.py               # SQLAlchemy модели
-│   ├── schemas.py              # Pydantic схемы
+│   ├── models.py              # SQLAlchemy модели
+│   ├── schemas.py             # Pydantic схемы
 │   ├── services/
 │   │   ├── __init__.py
-│   │   ├── deribit_client.py   # Клиент Deribit
-│   │   └── price_service.py    # Сервис для работы с ценами
+│   │   ├── deribit_client.py  # Клиент Deribit (aiohttp)
+│   │   └── price_service.py   # Сервис для работы с ценами
 │   ├── api/
 │   │   ├── __init__.py
 │   │   └── routes.py           # API роуты
-│   ├── celery_app.py           # Конфигурация Celery
-│   └── tasks.py                # Celery задачи
-├── alembic/                    # Миграции БД
-├── tests/                      # Unit тесты
+│   ├── celery_app.py          # Конфигурация Celery
+│   └── tasks.py               # Celery задачи
+├── alembic/                   # Миграции БД
+├── tests/                     # Unit тесты
 ├── docker-compose.yml
 ├── Dockerfile
 ├── requirements.txt
 └── README.md
 ```
 
-## Тестирование
+## Полезные команды
 
-Запуск тестов:
+### Управление контейнерами
+
 ```bash
+# Просмотр логов
+docker-compose logs -f
+
+# Логи конкретного сервиса
+docker-compose logs -f celery_worker
+docker-compose logs -f app
+
+# Остановка контейнеров
+docker-compose stop
+
+# Остановка и удаление
+docker-compose down
+
+# Пересборка и запуск
+docker-compose up -d --build
+```
+
+### Работа с базой данных
+
+```bash
+# Подключение к PostgreSQL
+docker-compose exec db psql -U deribit_user -d deribit_db
+
+# Просмотр данных
+docker-compose exec db psql -U deribit_user -d deribit_db -c "SELECT * FROM prices ORDER BY timestamp DESC LIMIT 10;"
+
+# Очистка таблицы prices
+docker-compose exec db psql -U deribit_user -d deribit_db -c "DELETE FROM prices;"
+```
+
+### Тестирование
+
+```bash
+# Запуск тестов
+docker-compose exec app pytest tests/ -v
+
+# Или локально
 pytest tests/ -v
 ```
+
+## Скриншоты
+
+### API Документация
+![Swagger API Docs](docs/screenshots/api_docs.png)
+*Swagger документация доступна по адресу http://localhost:8000/docs*
+
+### Данные в базе данных
+![Database Data](docs/screenshots/database_data.png)
+*Пример данных из таблицы prices*
+
+### Логи Celery Worker
+![Celery Logs](docs/screenshots/celery_logs.png)
+*Логи успешного получения цен с биржи Deribit*
 
 ## Design Decisions
 
@@ -166,7 +241,7 @@ pytest tests/ -v
 
 2. **Redis как брокер**: Redis используется как брокер сообщений для Celery из-за простоты настройки и высокой производительности.
 
-3. **Периодичность**: Задача настроена на выполнение каждую минуту через `beat_schedule` в Celery.
+3. **Точное выполнение**: Используется `crontab(minute="*")` для запуска задачи каждую минуту в 0 секунд, что гарантирует интервал ровно 60 секунд между записями.
 
 ### API Design
 
@@ -178,7 +253,7 @@ pytest tests/ -v
 
 ### Контейнеризация
 
-1. **Docker Compose**: Использован для оркестрации контейнеров (приложение, БД, Redis), что упрощает развертывание и разработку.
+1. **Docker Compose**: Использован для оркестрации контейнеров (приложение, БД, Redis, Celery), что упрощает развертывание и разработку.
 
 2. **Отдельные контейнеры**: Приложение и база данных развернуты в отдельных контейнерах для соблюдения принципа разделения ответственности.
 
@@ -193,3 +268,40 @@ pytest tests/ -v
 1. **Unit тесты**: Написаны тесты для основных методов сервисов и API endpoints с использованием моков.
 
 2. **Pytest**: Выбран как стандартный фреймворк для тестирования Python приложений.
+
+## Решение проблем
+
+### Контейнеры не запускаются
+
+1. Проверьте логи: `docker-compose logs`
+2. Убедитесь, что порты 8000, 5432, 6379 свободны
+3. Пересоберите образы: `docker-compose build --no-cache && docker-compose up -d`
+
+### База данных не инициализируется
+
+```bash
+docker-compose exec app alembic upgrade head
+```
+
+### Celery задачи не выполняются
+
+1. Проверьте логи: `docker-compose logs celery_worker`
+2. Проверьте Redis: `docker-compose exec redis redis-cli ping` (должен вернуть PONG)
+3. Перезапустите worker: `docker-compose restart celery_worker celery_beat`
+
+## Проверка работы
+
+1. Откройте http://localhost:8000/docs
+2. Выполните запрос: `GET /api/prices?ticker=BTC_USD`
+3. Подождите минуту и проверьте логи Celery: `docker-compose logs -f celery_worker`
+4. Проверьте данные в БД: `docker-compose exec db psql -U deribit_user -d deribit_db -c "SELECT * FROM prices ORDER BY timestamp DESC LIMIT 5;"`
+
+## Локальное развертывание (без Docker)
+
+1. Установите зависимости: `pip install -r requirements.txt`
+2. Настройте PostgreSQL и Redis (должны быть запущены локально)
+3. Создайте файл `.env` с настройками подключения
+4. Примените миграции: `alembic upgrade head`
+5. Запустите Celery worker: `celery -A app.celery_app worker --loglevel=info`
+6. Запустите Celery beat: `celery -A app.celery_app beat --loglevel=info`
+7. Запустите FastAPI: `uvicorn app.main:app --reload`

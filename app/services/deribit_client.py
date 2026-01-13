@@ -51,27 +51,55 @@ class DeribitClient:
             DeribitClientError: При ошибке получения данных
         """
         session = await self._get_session()
+        # Используем правильный формат URL согласно документации Deribit API v2
+        # Согласно ответу get_instruments, price_index имеет формат: "btc_usd" или "eth_usd"
+        # URL: https://www.deribit.com/api/v2/public/get_index_price?index_name=btc_usd
         url = f"{self.base_url}/public/get_index_price"
-        params = {"index_name": f"{currency}_USD"}
+        # Преобразуем валюту в формат index_name: валюта в нижнем регистре + "_usd"
+        # Например: BTC -> btc_usd, ETH -> eth_usd
+        index_name = f"{currency.lower()}_usd"
+        params = {"index_name": index_name}
         
         try:
             async with session.get(url, params=params) as response:
                 if response.status != 200:
+                    error_text = await response.text()
                     raise DeribitClientError(
-                        f"Failed to get index price: HTTP {response.status}"
+                        f"Failed to get index price: HTTP {response.status}, {error_text}"
                     )
                 
                 data = await response.json()
                 
-                if "error" in data and data["error"]:
+                # Проверяем формат ответа Deribit API v2 (может быть JSON-RPC или обычный JSON)
+                # Deribit API v2 возвращает ответ в формате JSON-RPC 2.0
+                if "error" in data:
+                    error_info = data["error"]
+                    if isinstance(error_info, dict):
+                        error_msg = error_info.get("message", str(error_info))
+                        error_code = error_info.get("code", "unknown")
+                    else:
+                        error_msg = str(error_info)
+                        error_code = "unknown"
                     raise DeribitClientError(
-                        f"Deribit API error: {data['error']}"
+                        f"Deribit API error (code {error_code}): {error_msg}"
                     )
                 
-                if "result" not in data or "index_price" not in data["result"]:
-                    raise DeribitClientError("Invalid response format from Deribit API")
+                # Проверяем наличие результата
+                if "result" not in data:
+                    raise DeribitClientError(
+                        f"Invalid response format from Deribit API: {data}"
+                    )
                 
-                return Decimal(str(data["result"]["index_price"]))
+                result = data["result"]
+                
+                # Проверяем наличие index_price в результате
+                if "index_price" not in result:
+                    raise DeribitClientError(
+                        f"Index price not found in response: {result}"
+                    )
+                
+                index_price = result["index_price"]
+                return Decimal(str(index_price))
                 
         except aiohttp.ClientError as e:
             raise DeribitClientError(f"Network error: {str(e)}") from e
