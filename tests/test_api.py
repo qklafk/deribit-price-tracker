@@ -81,7 +81,7 @@ async def test_get_prices_by_date(client, test_db):
         await service.create_price(price_data)
     
     response = await client.get(
-        "/api/prices/filter?ticker=BTC&start_date=2024-01-16&end_date=2024-01-18"
+        "/api/prices/filter?ticker=BTC&start_date=16-01-2024&end_date=18-01-2024"
     )
     
     assert response.status_code == 200

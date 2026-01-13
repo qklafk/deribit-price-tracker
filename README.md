@@ -122,13 +122,13 @@ GET /api/prices/last?ticker=ETH
 ### 3. Получение цены с фильтром по дате
 
 ```bash
-GET /api/prices/filter?ticker=BTC&start_date=2024-01-01&end_date=2024-01-31
+GET /api/prices/filter?ticker=BTC&start_date=01-01-2024&end_date=31-01-2024
 ```
 
 **Параметры:**
 - `ticker` (обязательный) - BTC или ETH (BTC_USD/ETH_USD тоже принимаются)
-- `start_date` (опциональный) - начальная дата в формате YYYY-MM-DD
-- `end_date` (опциональный) - конечная дата в формате YYYY-MM-DD
+- `start_date` (опциональный) - начальная дата в формате DD-MM-YYYY
+- `end_date` (опциональный) - конечная дата в формате DD-MM-YYYY
 
 ## Структура проекта
 

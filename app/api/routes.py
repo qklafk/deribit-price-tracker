@@ -85,8 +85,8 @@ async def get_last_price(
 @router.get("/filter", response_model=PriceListResponse)
 async def get_prices_by_date(
     ticker: str = Query(..., description="Тикер валюты (BTC или ETH). Допускаются также BTC_USD/ETH_USD"),
-    start_date: Optional[str] = Query(None, description="Начальная дата (YYYY-MM-DD)"),
-    end_date: Optional[str] = Query(None, description="Конечная дата (YYYY-MM-DD)"),
+    start_date: Optional[str] = Query(None, description="Начальная дата (DD-MM-YYYY)"),
+    end_date: Optional[str] = Query(None, description="Конечная дата (DD-MM-YYYY)"),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -94,8 +94,8 @@ async def get_prices_by_date(
     
     Args:
         ticker: Тикер валюты (обязательный параметр)
-        start_date: Начальная дата в формате YYYY-MM-DD (опционально)
-        end_date: Конечная дата в формате YYYY-MM-DD (опционально)
+        start_date: Начальная дата в формате DD-MM-YYYY (опционально)
+        end_date: Конечная дата в формате DD-MM-YYYY (опционально)
         db: Сессия базы данных
         
     Returns:
@@ -115,20 +115,20 @@ async def get_prices_by_date(
     
     if start_date:
         try:
-            start_datetime = datetime.strptime(start_date, "%Y-%m-%d")
+            start_datetime = datetime.strptime(start_date, "%d-%m-%Y")
         except ValueError:
             raise HTTPException(
                 status_code=400,
-                detail="Invalid start_date format. Use YYYY-MM-DD"
+                detail="Invalid start_date format. Use DD-MM-YYYY"
             )
     
     if end_date:
         try:
-            end_datetime = datetime.strptime(end_date, "%Y-%m-%d")
+            end_datetime = datetime.strptime(end_date, "%d-%m-%Y")
         except ValueError:
             raise HTTPException(
                 status_code=400,
-                detail="Invalid end_date format. Use YYYY-MM-DD"
+                detail="Invalid end_date format. Use DD-MM-YYYY"
             )
     
     service = PriceService(db)
