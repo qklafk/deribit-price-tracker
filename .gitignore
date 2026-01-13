@@ -1,12 +1,12 @@
-# Byte-compiled / optimized / DLL files
+# Скомпилированные байт-код и оптимизированные файлы
 __pycache__/
 *.py[cod]
 *$py.class
 
-# C extensions
+# C расширения
 *.so
 
-# Distribution / packaging
+# Дистрибуция и пакеты
 .Python
 build/
 develop-eggs/
@@ -22,7 +22,7 @@ var/
 *.egg-info/
 *.egg
 
-# Virtual environments
+# Виртуальные окружения
 .venv/
 venv/
 ENV/
@@ -30,67 +30,50 @@ env/
 env.bak/
 venv.bak/
 
-# Pytest
+# Тесты (pytest)
 .pytest_cache/
 .cache/
 
-# Coverage
+# Покрытие кода
 htmlcov/
 .coverage
 .coverage.*
 coverage.xml
 
-# Pyre type checker
+# Проверка типов (Pyre)
 .pyre/
 
-# mypy
+# Проверка типов (mypy)
 .mypy_cache/
 
-# IDEs
-.vscode/
-.idea/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# dotenv
-.env
-.env.*
-
-# Celery
-celerybeat-schedule
-
-# Docker
-docker-compose.override.yml
-
-# Logs
-*.log
-
-# Jupyter
-.ipynb_checkpoints/
-
-# local secrets
-secrets/
-# Виртуальное окружение
-venv/
-env/
-ENV/
-.venv/
-
-# IDE файлы
+# IDE и редакторы
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# OS файлы
+# Файлы операционной системы
 .DS_Store
 Thumbs.db
 
-# Переменные окружения
+# Файлы переменных окружения
 .env
-.env.local
+.env.*
+
+# Celery (планировщик задач)
+celerybeat-schedule
+
+# Docker
+docker-compose.override.yml
+
+# Логи
+*.log
+
+# Jupyter ноутбуки
+.ipynb_checkpoints/
+
+# Локальные секреты
+secrets/
 
 # Временные файлы
 *.tmp
