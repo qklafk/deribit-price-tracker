@@ -110,6 +110,7 @@ class DeribitClient:
     
     async def __aenter__(self):
         """Поддержка async context manager."""
+        await self._get_session()
         return self
     
     async def __aexit__(self, exc_type, exc_val, exc_tb):

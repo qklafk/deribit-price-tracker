@@ -1,5 +1,5 @@
 """Модели базы данных."""
-from sqlalchemy import Column, String, Numeric, BigInteger, Index
+from sqlalchemy import Column, String, Numeric, Integer, BigInteger, Index
 from app.database import Base
 
 
@@ -8,7 +8,7 @@ class Price(Base):
     
     __tablename__ = "prices"
     
-    id = Column(BigInteger, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     ticker = Column(String(10), nullable=False, index=True)
     price = Column(Numeric(20, 8), nullable=False)
     timestamp = Column(BigInteger, nullable=False, index=True)

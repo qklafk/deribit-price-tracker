@@ -12,8 +12,8 @@ async def test_get_index_price_success():
     mock_response_data = {
         "jsonrpc": "2.0",
         "result": {
-            "index_price": "50000.5",
-            "index_name": "BTC_USD"
+                "index_price": "50000.5",
+                "index_name": "BTC"
         },
         "usIn": 1234567890,
         "usOut": 1234567891,
@@ -25,10 +25,12 @@ async def test_get_index_price_success():
     mock_response.status = 200
     mock_response.json = AsyncMock(return_value=mock_response_data)
     
-    mock_session = AsyncMock()
-    mock_session.get = AsyncMock()
-    mock_session.get.return_value.__aenter__ = AsyncMock(return_value=mock_response)
-    mock_session.get.return_value.__aexit__ = AsyncMock(return_value=False)
+    mock_session = MagicMock()
+    # Create an async context manager that yields the mock_response
+    cm = AsyncMock()
+    cm.__aenter__.return_value = mock_response
+    cm.__aexit__.return_value = False
+    mock_session.get.return_value = cm
     mock_session.close = AsyncMock()
     
     client = DeribitClient(session=mock_session)
@@ -54,10 +56,11 @@ async def test_get_index_price_api_error():
     mock_response.status = 200
     mock_response.json = AsyncMock(return_value=mock_response_data)
     
-    mock_session = AsyncMock()
-    mock_session.get = AsyncMock()
-    mock_session.get.return_value.__aenter__ = AsyncMock(return_value=mock_response)
-    mock_session.get.return_value.__aexit__ = AsyncMock(return_value=False)
+    mock_session = MagicMock()
+    cm = AsyncMock()
+    cm.__aenter__.return_value = mock_response
+    cm.__aexit__.return_value = False
+    mock_session.get.return_value = cm
     mock_session.close = AsyncMock()
     
     client = DeribitClient(session=mock_session)
@@ -72,10 +75,11 @@ async def test_get_index_price_http_error():
     mock_response = AsyncMock(spec=ClientResponse)
     mock_response.status = 500
     
-    mock_session = AsyncMock()
-    mock_session.get = AsyncMock()
-    mock_session.get.return_value.__aenter__ = AsyncMock(return_value=mock_response)
-    mock_session.get.return_value.__aexit__ = AsyncMock(return_value=False)
+    mock_session = MagicMock()
+    cm = AsyncMock()
+    cm.__aenter__.return_value = mock_response
+    cm.__aexit__.return_value = False
+    mock_session.get.return_value = cm
     mock_session.close = AsyncMock()
     
     client = DeribitClient(session=mock_session)
@@ -87,11 +91,11 @@ async def test_get_index_price_http_error():
 @pytest.mark.asyncio
 async def test_context_manager():
     """Тест использования клиента как context manager."""
-    mock_session = AsyncMock()
+    mock_session = MagicMock()
     mock_session.close = AsyncMock()
-    
+
     async with DeribitClient(session=mock_session) as client:
         assert client is not None
-    
+
     # Сессия не должна закрываться, так как она была передана извне
     mock_session.close.assert_not_called()

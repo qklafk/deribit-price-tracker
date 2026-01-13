@@ -13,7 +13,7 @@ async def test_create_price(test_db):
     service = PriceService(test_db)
     
     price_data = PriceCreate(
-        ticker="BTC_USD",
+           ticker="BTC",
         price=Decimal("50000.5"),
         timestamp=1234567890
     )
@@ -21,7 +21,7 @@ async def test_create_price(test_db):
     price = await service.create_price(price_data)
     
     assert price.id is not None
-    assert price.ticker == "BTC_USD"
+    assert price.ticker == "BTC"
     assert price.price == Decimal("50000.5")
     assert price.timestamp == 1234567890
 
@@ -34,7 +34,7 @@ async def test_get_prices_by_ticker(test_db):
     # Создаем несколько записей
     for i in range(3):
         price_data = PriceCreate(
-            ticker="BTC_USD",
+                ticker="BTC",
             price=Decimal(f"5000{i}.5"),
             timestamp=1234567890 + i
         )
@@ -42,16 +42,16 @@ async def test_get_prices_by_ticker(test_db):
     
     # Создаем запись с другим тикером
     eth_price_data = PriceCreate(
-        ticker="ETH_USD",
+            ticker="ETH",
         price=Decimal("3000.5"),
         timestamp=1234567890
     )
     await service.create_price(eth_price_data)
     
-    prices = await service.get_prices_by_ticker("BTC_USD")
+    prices = await service.get_prices_by_ticker("BTC")
     
     assert len(prices) == 3
-    assert all(price.ticker == "BTC_USD" for price in prices)
+    assert all(price.ticker == "BTC" for price in prices)
     # Проверяем сортировку по убыванию timestamp
     assert prices[0].timestamp >= prices[1].timestamp >= prices[2].timestamp
 
@@ -64,16 +64,16 @@ async def test_get_last_price(test_db):
     # Создаем несколько записей
     for i in range(3):
         price_data = PriceCreate(
-            ticker="BTC_USD",
+            ticker="BTC",
             price=Decimal(f"5000{i}.5"),
             timestamp=1234567890 + i
         )
         await service.create_price(price_data)
     
-    last_price = await service.get_last_price("BTC_USD")
+    last_price = await service.get_last_price("BTC")
     
     assert last_price is not None
-    assert last_price.ticker == "BTC_USD"
+    assert last_price.ticker == "BTC"
     assert last_price.timestamp == 1234567892  # Последний timestamp
 
 
@@ -82,7 +82,7 @@ async def test_get_last_price_not_found(test_db):
     """Тест получения последней цены когда данных нет."""
     service = PriceService(test_db)
     
-    last_price = await service.get_last_price("BTC_USD")
+    last_price = await service.get_last_price("BTC")
     
     assert last_price is None
 
@@ -98,7 +98,7 @@ async def test_get_prices_by_date_range(test_db):
     for i in range(5):
         date = base_time + timedelta(days=i)
         price_data = PriceCreate(
-            ticker="BTC_USD",
+            ticker="BTC",
             price=Decimal(f"5000{i}.5"),
             timestamp=int(date.timestamp())
         )
@@ -108,7 +108,7 @@ async def test_get_prices_by_date_range(test_db):
     end_date = datetime(2024, 1, 18)
     
     prices = await service.get_prices_by_date_range(
-        "BTC_USD",
+            "BTC",
         start_date=start_date,
         end_date=end_date
     )
@@ -116,7 +116,7 @@ async def test_get_prices_by_date_range(test_db):
     assert len(prices) == 3
     for price in prices:
         price_date = datetime.fromtimestamp(price.timestamp)
-        assert start_date <= price_date <= end_date
+        assert start_date.date() <= price_date.date() <= end_date.date()
 
 
 @pytest.mark.asyncio
@@ -129,7 +129,7 @@ async def test_get_prices_by_date_range_start_only(test_db):
     for i in range(5):
         date = base_time + timedelta(days=i)
         price_data = PriceCreate(
-            ticker="BTC_USD",
+            ticker="BTC",
             price=Decimal(f"5000{i}.5"),
             timestamp=int(date.timestamp())
         )
@@ -138,11 +138,11 @@ async def test_get_prices_by_date_range_start_only(test_db):
     start_date = datetime(2024, 1, 17)
     
     prices = await service.get_prices_by_date_range(
-        "BTC_USD",
+            "BTC",
         start_date=start_date
     )
     
     assert len(prices) == 3
     for price in prices:
         price_date = datetime.fromtimestamp(price.timestamp)
-        assert price_date >= start_date
+        assert price_date.date() >= start_date.date()

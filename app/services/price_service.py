@@ -4,6 +4,7 @@ from sqlalchemy import select, and_
 from typing import List, Optional
 from decimal import Decimal
 from datetime import datetime
+from datetime import timedelta
 from app.models import Price
 from app.schemas import PriceCreate
 
@@ -98,7 +99,15 @@ class PriceService:
             conditions.append(Price.timestamp >= start_timestamp)
         
         if end_date:
+            # Treat a date with no time component as inclusive end of day
             end_timestamp = int(end_date.timestamp())
+            if (
+                end_date.hour == 0
+                and end_date.minute == 0
+                and end_date.second == 0
+                and end_date.microsecond == 0
+            ):
+                end_timestamp += 86399
             conditions.append(Price.timestamp <= end_timestamp)
         
         if conditions:

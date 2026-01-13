@@ -18,7 +18,7 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         'prices',
-        sa.Column('id', sa.BigInteger(), nullable=False),
+        sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('ticker', sa.String(length=10), nullable=False),
         sa.Column('price', sa.Numeric(precision=20, scale=8), nullable=False),
         sa.Column('timestamp', sa.BigInteger(), nullable=False),

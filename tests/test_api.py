@@ -13,19 +13,19 @@ async def test_get_all_prices(client, test_db):
     service = PriceService(test_db)
     for i in range(3):
         price_data = PriceCreate(
-            ticker="BTC_USD",
+            ticker="BTC",
             price=Decimal(f"5000{i}.5"),
             timestamp=1234567890 + i
         )
         await service.create_price(price_data)
     
-    response = await client.get("/api/prices?ticker=BTC_USD")
+    response = await client.get("/api/prices?ticker=BTC")
     
     assert response.status_code == 200
     data = response.json()
     assert data["total"] == 3
     assert len(data["prices"]) == 3
-    assert all(price["ticker"] == "BTC_USD" for price in data["prices"])
+    assert all(price["ticker"] == "BTC" for price in data["prices"])
 
 
 @pytest.mark.asyncio
@@ -43,24 +43,24 @@ async def test_get_last_price(client, test_db):
     
     for i in range(3):
         price_data = PriceCreate(
-            ticker="ETH_USD",
+            ticker="ETH",
             price=Decimal(f"300{i}.5"),
             timestamp=1234567890 + i
         )
         await service.create_price(price_data)
     
-    response = await client.get("/api/prices/last?ticker=ETH_USD")
+    response = await client.get("/api/prices/last?ticker=ETH")
     
     assert response.status_code == 200
     data = response.json()
-    assert data["ticker"] == "ETH_USD"
+    assert data["ticker"] == "ETH"
     assert data["timestamp"] == 1234567892
 
 
 @pytest.mark.asyncio
 async def test_get_last_price_not_found(client):
     """Тест получения последней цены когда данных нет."""
-    response = await client.get("/api/prices/last?ticker=BTC_USD")
+    response = await client.get("/api/prices/last?ticker=BTC")
     
     assert response.status_code == 404
 
@@ -74,14 +74,14 @@ async def test_get_prices_by_date(client, test_db):
     for i in range(5):
         date = base_time + timedelta(days=i)
         price_data = PriceCreate(
-            ticker="BTC_USD",
+            ticker="BTC",
             price=Decimal(f"5000{i}.5"),
             timestamp=int(date.timestamp())
         )
         await service.create_price(price_data)
     
     response = await client.get(
-        "/api/prices/filter?ticker=BTC_USD&start_date=2024-01-16&end_date=2024-01-18"
+        "/api/prices/filter?ticker=BTC&start_date=2024-01-16&end_date=2024-01-18"
     )
     
     assert response.status_code == 200
@@ -93,7 +93,7 @@ async def test_get_prices_by_date(client, test_db):
 async def test_get_prices_by_date_invalid_format(client):
     """Тест получения цен с невалидным форматом даты."""
     response = await client.get(
-        "/api/prices/filter?ticker=BTC_USD&start_date=invalid-date"
+        "/api/prices/filter?ticker=BTC&start_date=invalid-date"
     )
     
     assert response.status_code == 400

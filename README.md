@@ -5,7 +5,7 @@
 ## Описание
 
 Приложение состоит из двух основных компонентов:
-1. **Celery Worker** - периодически получает индексные цены BTC_USD и ETH_USD с биржи Deribit каждую минуту и сохраняет их в PostgreSQL
+1. **Celery Worker** - периодически получает индексные цены BTC и ETH с биржи Deribit каждую минуту и сохраняет их в PostgreSQL
 2. **FastAPI Application** - предоставляет REST API для получения сохраненных данных о ценах
 
 ## Технологический стек
@@ -81,12 +81,12 @@ docker-compose ps
 
 ## Использование API
 
-Все методы требуют обязательный query-параметр `ticker` (BTC_USD или ETH_USD).
+Все методы требуют обязательный query-параметр `ticker` (BTC или ETH). Допускаются также BTC_USD/ETH_USD.
 
 ### 1. Получение всех сохраненных данных по валюте
 
 ```bash
-GET /api/prices?ticker=BTC_USD
+GET /api/prices?ticker=BTC
 ```
 
 **Пример ответа:**
@@ -95,7 +95,7 @@ GET /api/prices?ticker=BTC_USD
   "prices": [
     {
       "id": 1,
-      "ticker": "BTC_USD",
+      "ticker": "BTC",
       "price": "92084.62000000",
       "timestamp": 1768312459
     }
@@ -107,13 +107,13 @@ GET /api/prices?ticker=BTC_USD
 ### 2. Получение последней цены валюты
 
 ```bash
-GET /api/prices/last?ticker=ETH_USD
+GET /api/prices/last?ticker=ETH
 ```
 
 **Пример ответа:**
 ```json
 {
-  "ticker": "ETH_USD",
+  "ticker": "ETH",
   "price": "3143.85000000",
   "timestamp": 1768312459
 }
@@ -122,11 +122,11 @@ GET /api/prices/last?ticker=ETH_USD
 ### 3. Получение цены с фильтром по дате
 
 ```bash
-GET /api/prices/filter?ticker=BTC_USD&start_date=2024-01-01&end_date=2024-01-31
+GET /api/prices/filter?ticker=BTC&start_date=2024-01-01&end_date=2024-01-31
 ```
 
 **Параметры:**
-- `ticker` (обязательный) - BTC_USD или ETH_USD
+- `ticker` (обязательный) - BTC или ETH (BTC_USD/ETH_USD тоже принимаются)
 - `start_date` (опциональный) - начальная дата в формате YYYY-MM-DD
 - `end_date` (опциональный) - конечная дата в формате YYYY-MM-DD
 
@@ -239,6 +239,10 @@ pytest tests/ -v
 
 1. **Celery**: Выбран для выполнения периодических задач, так как это стандартное решение для Python приложений с поддержкой распределенных задач.
 
+### Тикеры и нормализация
+
+Внутренне приложение нормализует входящие тикеры к формату `BTC` и `ETH` для хранения в базе. API продолжает принимать как новый формат (`BTC`, `ETH`), так и legacy-формат (`BTC_USD`, `ETH_USD`) — они автоматически нормализуются. Это было сделано для упрощения запросов и унификации хранения.
+
 2. **Redis как брокер**: Redis используется как брокер сообщений для Celery из-за простоты настройки и высокой производительности.
 
 3. **Точное выполнение**: Используется `crontab(minute="*")` для запуска задачи каждую минуту в 0 секунд, что гарантирует интервал ровно 60 секунд между записями.
@@ -292,7 +296,7 @@ docker-compose exec app alembic upgrade head
 ## Проверка работы
 
 1. Откройте http://localhost:8000/docs
-2. Выполните запрос: `GET /api/prices?ticker=BTC_USD`
+2. Выполните запрос: `GET /api/prices?ticker=BTC`
 3. Подождите минуту и проверьте логи Celery: `docker-compose logs -f celery_worker`
 4. Проверьте данные в БД: `docker-compose exec db psql -U deribit_user -d deribit_db -c "SELECT * FROM prices ORDER BY timestamp DESC LIMIT 5;"`
 

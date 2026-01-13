@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/prices", tags=["prices"])
 
 @router.get("", response_model=PriceListResponse)
 async def get_all_prices(
-    ticker: str = Query(..., description="Тикер валюты (BTC_USD или ETH_USD)"),
+    ticker: str = Query(..., description="Тикер валюты (BTC или ETH). Допускаются также BTC_USD/ETH_USD"),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -25,14 +25,17 @@ async def get_all_prices(
     Returns:
         Список всех цен для указанного тикера
     """
-    if ticker not in ['BTC_USD', 'ETH_USD']:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid ticker. Must be BTC_USD or ETH_USD"
-        )
-    
+    # Accept both new and legacy ticker formats and normalize to BTC/ETH
+    norm = {
+        'BTC': 'BTC', 'ETH': 'ETH',
+        'BTC_USD': 'BTC', 'ETH_USD': 'ETH'
+    }
+    if ticker not in norm:
+        raise HTTPException(status_code=400, detail="Invalid ticker. Must be BTC or ETH")
+
+    ticker_norm = norm[ticker]
     service = PriceService(db)
-    prices = await service.get_prices_by_ticker(ticker)
+    prices = await service.get_prices_by_ticker(ticker_norm)
     
     return PriceListResponse(
         prices=[PriceResponse.model_validate(price) for price in prices],
@@ -42,7 +45,7 @@ async def get_all_prices(
 
 @router.get("/last", response_model=LastPriceResponse)
 async def get_last_price(
-    ticker: str = Query(..., description="Тикер валюты (BTC_USD или ETH_USD)"),
+    ticker: str = Query(..., description="Тикер валюты (BTC или ETH). Допускаются также BTC_USD/ETH_USD"),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -55,14 +58,16 @@ async def get_last_price(
     Returns:
         Последняя цена для указанного тикера
     """
-    if ticker not in ['BTC_USD', 'ETH_USD']:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid ticker. Must be BTC_USD or ETH_USD"
-        )
-    
+    norm = {
+        'BTC': 'BTC', 'ETH': 'ETH',
+        'BTC_USD': 'BTC', 'ETH_USD': 'ETH'
+    }
+    if ticker not in norm:
+        raise HTTPException(status_code=400, detail="Invalid ticker. Must be BTC or ETH")
+
+    ticker_norm = norm[ticker]
     service = PriceService(db)
-    price = await service.get_last_price(ticker)
+    price = await service.get_last_price(ticker_norm)
     
     if price is None:
         raise HTTPException(
@@ -79,7 +84,7 @@ async def get_last_price(
 
 @router.get("/filter", response_model=PriceListResponse)
 async def get_prices_by_date(
-    ticker: str = Query(..., description="Тикер валюты (BTC_USD или ETH_USD)"),
+    ticker: str = Query(..., description="Тикер валюты (BTC или ETH). Допускаются также BTC_USD/ETH_USD"),
     start_date: Optional[str] = Query(None, description="Начальная дата (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="Конечная дата (YYYY-MM-DD)"),
     db: AsyncSession = Depends(get_db)
@@ -96,11 +101,14 @@ async def get_prices_by_date(
     Returns:
         Список цен для указанного тикера в указанном диапазоне дат
     """
-    if ticker not in ['BTC_USD', 'ETH_USD']:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid ticker. Must be BTC_USD or ETH_USD"
-        )
+    norm = {
+        'BTC': 'BTC', 'ETH': 'ETH',
+        'BTC_USD': 'BTC', 'ETH_USD': 'ETH'
+    }
+    if ticker not in norm:
+        raise HTTPException(status_code=400, detail="Invalid ticker. Must be BTC or ETH")
+
+    ticker_norm = norm[ticker]
     
     start_datetime = None
     end_datetime = None
@@ -124,7 +132,7 @@ async def get_prices_by_date(
             )
     
     service = PriceService(db)
-    prices = await service.get_prices_by_date_range(ticker, start_datetime, end_datetime)
+    prices = await service.get_prices_by_date_range(ticker_norm, start_datetime, end_datetime)
     
     return PriceListResponse(
         prices=[PriceResponse.model_validate(price) for price in prices],

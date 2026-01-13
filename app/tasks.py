@@ -38,8 +38,8 @@ async def _fetch_and_save_price(ticker: str, currency: str):
     Получить индексную цену валюты с биржи Deribit и сохранить в БД.
     
     Args:
-        ticker: Тикер для сохранения (BTC_USD или ETH_USD)
-        currency: Валюта для запроса к API (BTC или ETH)
+        ticker: Тикер для сохранения (BTC или ETH)
+        currency: Валюта для запроса к API (BTC or ETH)
     """
     async with DeribitClient() as client:
         try:
@@ -85,7 +85,7 @@ def fetch_prices():
     """
     import asyncio
     
-    logger.info("Запуск задачи получения цен BTC_USD и ETH_USD")
+    logger.info("Запуск задачи получения цен BTC и ETH")
     
     # Создаем новый event loop для задачи
     loop = asyncio.new_event_loop()
@@ -95,8 +95,8 @@ def fetch_prices():
         # Запускаем обе задачи параллельно (получение цен для BTC и ETH одновременно)
         loop.run_until_complete(
             asyncio.gather(
-                _fetch_and_save_price("BTC_USD", "BTC"),
-                _fetch_and_save_price("ETH_USD", "ETH")
+                _fetch_and_save_price("BTC", "BTC"),
+                _fetch_and_save_price("ETH", "ETH")
             )
         )
         logger.info("Задача получения цен успешно завершена")
